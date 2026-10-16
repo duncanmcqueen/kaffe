@@ -1,3 +1,33 @@
+THIS IS A FORK
+==============
+
+This is a fork of Kaffe (https://github.com/kaffe/kaffe), which is no
+longer maintained. The upstream repository is archived.
+
+The "haiku" branch of this fork contains:
+
+  - A port to Haiku x86_64 (interpreter engine, unix-pthreads).
+  - Fixes for memory-safety vulnerabilities. A malformed class file,
+    a non-ASCII string or a very long native method name could cause
+    a buffer overflow or a read past the end of a buffer. The fixes
+    are in the commit "Fix memory-safety bugs in class loading, strings
+    and JNI lookup", which lists each problem.
+
+The vulnerabilities were found with OpenAnt, an LLM security scanner,
+and each one was checked by hand. An AI model (Claude Code, by
+Anthropic) helped to write the fixes. The fixes were tested on Haiku
+with Kaffe's regression suite and with new tests.
+
+Kaffe has no working sandbox. Do not use it to run Java code that you
+do not trust.
+
+This fork is used by BeKaffe (https://github.com/duncanmcqueen/bekaffe),
+an AWT, Swing and sound peer for Haiku. Report problems with this fork
+at https://github.com/duncanmcqueen/kaffe/issues.
+
+The original README follows.
+
+------------------------------------------------------------------------
  
 			 ===================
 
