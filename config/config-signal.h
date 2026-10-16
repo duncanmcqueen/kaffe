@@ -16,6 +16,12 @@
 #include "config-std.h"
 #include <signal.h>
 
+/* Haiku (and some other systems) name SIGIO SIGPOLL. */
+#if !defined(SIGIO) && defined(SIGPOLL)
+#define SIGIO SIGPOLL
+#endif
+
+/* This macro may not exist - define it if necessary */
 /* This macro may not exist - define it if necessary */
 #if !defined(HAVE_SIGEMPTYSET)
 #define sigemptyset(s)          (*(s) = 0)

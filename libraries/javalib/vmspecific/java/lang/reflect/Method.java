@@ -399,7 +399,7 @@ extends AccessibleObject implements Member, GenericDeclaration
     for (int i = 0; i < args.length; i++) {
       Class pt = parameterTypes[i];
       Object arg = args[i];
-      if (pt.isPrimitive()) { 
+      if (pt.isPrimitive() && pt.getName().charAt(0) != 0x5b) { 
 	/* Might need fixup */
 	if (pt == Boolean.TYPE) {
 	  if (arg instanceof Boolean) {

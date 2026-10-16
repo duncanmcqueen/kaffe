@@ -50,6 +50,7 @@ typedef struct Hjava_lang_Object {
         void*       finalizer_call;
 	/* Data follows on immediately */
 } Hjava_lang_Object;
+#define Hjava_lang_Object_defined
 
 /* Turn a handle into the real thing */
 #define	unhand(o)	(o)

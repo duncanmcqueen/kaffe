@@ -12,8 +12,8 @@
 #ifndef __baseclasses_h
 #define __baseclasses_h
 
-#include "object.h"
 #include "native.h"
+#include "object.h"
 
 #define	STRINGCLASS	"java/lang/String"
 #define	OBJECTCLASS	"java/lang/Object"

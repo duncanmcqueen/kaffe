@@ -7,6 +7,7 @@
  * See the file "license.terms" for information on usage and redistribution 
  * of this file. 
  */
+#include <ltdl.h>
 
 #include "config.h"
 #include "config-std.h"
@@ -29,7 +30,7 @@
 #endif
 
 #ifndef LIBRARYSUFFIX
-#define LIBRARYSUFFIX	LTDL_SHLIB_EXT
+#define LIBRARYSUFFIX	".so"
 #endif
 
 extern jboolean runFinalizerOnExit;

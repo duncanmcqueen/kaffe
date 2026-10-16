@@ -53,7 +53,7 @@ printShortVersion(void)
 			"with ABSOLUTELY NO WARRANTY.\n\n"));
 
 	fprintf(versionfd, _("Engine: %s   Version: %s   Java Version: %s\n"),
-		engine_name, PACKAGE_VERSION, JAVA_VERSION_STRING);
+		"Interpreter", PACKAGE_VERSION, JAVA_VERSION_STRING);
 	fprintf(versionfd, _("Heap defaults: minimum size: %d MB, maximum size: unlimited\n"),
 		MIN_HEAPSIZE / (1024*1024)); 
 	fprintf(versionfd, _("Stack default size: %d KB\n"), THREADSTACKSIZE / 1024);

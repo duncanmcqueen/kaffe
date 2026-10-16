@@ -187,10 +187,31 @@ static inline void sysdepCallMethod(callMethodInfo* call)
         break;
         
       case 1:
-        if (call->rettype == 'F')
+        /* The x86-64 ABI only defines the low 8/16 bits of %eax for
+           jboolean/jbyte/jchar/jshort returns, so call through a pointer
+           of the right type and let the compiler extend the value.
+           Reading all of %eax made e.g. VMClass.isPrimitive() return
+           true for every class.  */
+        switch (call->rettype) {
+        case 'F':
           call->ret->f = ((jfloat (*)(ARG_TYPES))(func))(ARG_LIST);
-        else /* Must be 32-bit or smaller int.  */
+          break;
+        case 'Z':
+          call->ret->i = ((jboolean (*)(ARG_TYPES))(func))(ARG_LIST);
+          break;
+        case 'B':
+          call->ret->i = ((jbyte (*)(ARG_TYPES))(func))(ARG_LIST);
+          break;
+        case 'C':
+          call->ret->i = ((jchar (*)(ARG_TYPES))(func))(ARG_LIST);
+          break;
+        case 'S':
+          call->ret->i = ((jshort (*)(ARG_TYPES))(func))(ARG_LIST);
+          break;
+        default: /* Must be a 32-bit int or a reference.  */
           call->ret->i = ((jint (*)(ARG_TYPES))(func))(ARG_LIST);
+          break;
+        }
         break;
 
       default:

@@ -47,6 +47,8 @@ sunos4*)	Khost_os=sunos4 ;;
 sysv*)		Khost_os=univel_svr4 ;;
 ultrix4*)	Khost_os=ultrix4 ;;
 uclinux*)	Khost_os=uclinux ;;
-interix*)	Khost_os=interix6 ;;
+interix*)		Khost_os=interix6 ;;
+haiku*)	Khost_os=haiku ;;
+beos*)		Khost_os=haiku ;;
 
 esac
