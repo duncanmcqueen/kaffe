@@ -1524,7 +1524,7 @@ verifyBasicBlock(Verifier* v, BlockInfo* block)
 			break;
 			
 		case DUP2_X1:
-			ENSURE_OPSTACK_SIZE(2);
+			ENSURE_OPSTACK_SIZE(3);
 			if (isWide(getOpstackItem(block, 2))) {
 				return verifyError(v, "dup_x1 requires top 2 bytes on operand stack to be single bytes items");
 			}

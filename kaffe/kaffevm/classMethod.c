@@ -1043,7 +1043,8 @@ addSourceFile(Hjava_lang_Class* c, int idx, errorInfo *einfo)
 
 	pool = CLASS_CONSTANTS (c);
 
-	if (pool->tags[idx] != CONSTANT_Utf8) {
+	if (idx <= 0 || (unsigned int)idx >= pool->size ||
+	    pool->tags[idx] != CONSTANT_Utf8) {
 		postExceptionMessage(einfo, JAVA_LANG(ClassFormatError),
 				     "invalid sourcefile index: %d",
 				     idx);
@@ -1090,7 +1091,7 @@ addInnerClasses(Hjava_lang_Class* c, size_t len UNUSED, classFile* fp,
 		return true;
 	}
 
-	if (! checkBufSize(fp, (u2)(nr*(2*4)), CLASS_CNAME(c), einfo))
+	if (! checkBufSize(fp, (u4)nr * (2*4), CLASS_CNAME(c), einfo))
 	    return false;
 
 	ic = gc_malloc(sizeof(innerClass) * nr, KGC_ALLOC_CLASSMISC);
@@ -1919,6 +1920,34 @@ allocStaticFields(Hjava_lang_Class* class, errorInfo *einfo)
 	return (true);
 }
 
+/*
+ * Check that a ConstantValue attribute has the type of its field.  The
+ * value is stored in the field, so a wrong type can write past it.
+ */
+static bool
+constantFitsField(Field* fld, int tag)
+{
+	Hjava_lang_Class* type = FIELD_ISPRIM(fld) ? FIELD_TYPE(fld) : NULL;
+
+	switch (tag) {
+	case CONSTANT_Integer:
+		return type == intClass || type == shortClass ||
+		       type == charClass || type == byteClass ||
+		       type == booleanClass;
+	case CONSTANT_Float:
+		return type == floatClass;
+	case CONSTANT_Long:
+		return type == longClass;
+	case CONSTANT_Double:
+		return type == doubleClass;
+	case CONSTANT_String:
+	case CONSTANT_ResolvedString:
+		return FIELD_ISREF(fld);
+	default:
+		return false;
+	}
+}
+
 static
 bool
 resolveStaticFields(Hjava_lang_Class* class, errorInfo *einfo)
@@ -1939,6 +1968,14 @@ resolveStaticFields(Hjava_lang_Class* class, errorInfo *einfo)
 
 			mem = FIELD_ADDRESS(fld);
 			idx = FIELD_SIZE(fld);
+
+			if (!constantFitsField(fld, CONST_TAG(idx, pool))) {
+				postExceptionMessage(einfo,
+					JAVA_LANG(ClassFormatError),
+					"%s (constant value of field %s has the wrong type)",
+					CLASS_CNAME(class), FIELD_NAME(fld));
+				return false;
+			}
 
 			switch (CONST_TAG(idx, pool)) {
 			case CONSTANT_Integer:
@@ -2712,6 +2749,9 @@ sizeofSigItem(const char** strp, bool want_wide_refs)
 			case '(':
 				continue;
 			case 0:
+				/* Do not move past the end of the string. */
+				*strp = str;
+				return (count);
 			case ')':
 				break;
 			default:
@@ -2722,9 +2762,14 @@ sizeofSigItem(const char** strp, bool want_wide_refs)
 			while (*str == '[')
 				++str;
 			if (*str == 'L') {
-				while (*str != ';') {
+				while (*str != ';' && *str != 0) {
 					str++;
 				}
+			}
+			if (*str == 0) {
+				/* Malformed signature: stop at its end. */
+				*strp = str;
+				return (count);
 			}
 		}
 

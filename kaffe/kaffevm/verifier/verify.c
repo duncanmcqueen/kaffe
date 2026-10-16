@@ -98,9 +98,9 @@ parseBaseTypeDescriptor(const char* sig)
 const char*
 parseObjectTypeDescriptor(const char* sig)
 {
-	for (sig++; sig != '\0' && *sig != ';'; sig++);
+	for (sig++; *sig != '\0' && *sig != ';'; sig++);
 	
-	if (sig == '\0') return NULL;
+	if (*sig == '\0') return NULL;
 	else             return sig + 1;
 }
 

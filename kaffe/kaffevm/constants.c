@@ -162,6 +162,14 @@ readConstantPool(Hjava_lang_Class* this, classFile* fp, errorInfo *einfo)
 		case CONSTANT_Long:
 			if (! checkBufSize(fp, 8, className, einfo))
 				goto fail;
+			/* A long or a double takes two entries. */
+			if (i + 1 >= info->size) {
+				postExceptionMessage(einfo,
+					JAVA_LANG(ClassFormatError),
+					"%s (8-byte constant at the end of the constant pool)",
+					className);
+				goto fail;
+			}
 			readu4(&d4, fp);
 			readu4(&d4b, fp);
 #if SIZEOF_VOID_P == 8
@@ -179,6 +187,14 @@ readConstantPool(Hjava_lang_Class* this, classFile* fp, errorInfo *einfo)
 		case CONSTANT_Double:
 			if (! checkBufSize(fp, 8, className, einfo))
 				goto fail;
+			/* A long or a double takes two entries. */
+			if (i + 1 >= info->size) {
+				postExceptionMessage(einfo,
+					JAVA_LANG(ClassFormatError),
+					"%s (8-byte constant at the end of the constant pool)",
+					className);
+				goto fail;
+			}
 			readu4(&d4, fp);
 			readu4(&d4b, fp);
 

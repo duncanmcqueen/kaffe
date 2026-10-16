@@ -344,13 +344,22 @@ loadNativeLibrarySym(const char* name)
 }
 
 
-static void
-strcatJNI(char* to, const char* from)
+/*
+ * Append the JNI form of from to the string in to, which is a buffer of
+ * size bytes.  Return false if the result does not fit.
+ */
+static bool
+strcatJNI(char* to, size_t size, const char* from)
 {
 	char* ptr;
 
 	ptr = &to[strlen(to)];
 	for (; *from != 0; from++) {
+		/* Each character gives at most 2; keep room for the NUL. */
+		if ((size_t)(ptr - to) + 2 >= size) {
+			*ptr = 0;
+			return false;
+		}
 		switch (*from) {
 		case '(':
 			/* Ignore */
@@ -381,6 +390,7 @@ strcatJNI(char* to, const char* from)
 
 	end:;
 	*ptr = 0;
+	return true;
 }
 
 
@@ -403,15 +413,21 @@ Kaffe_JNI_native(Method* meth)
 #else
 	strcpy(name, "Java_");
 #endif
-	strcatJNI(name, meth->class->name->data);
+	/* strcatJNI() keeps room for the "_" and "__" separators. */
+	if (!strcatJNI(name, sizeof(name), meth->class->name->data))
+		return NULL;
 	strcat(name, "_");
-	strcatJNI(name, meth->name->data);
+	if (!strcatJNI(name, sizeof(name), meth->name->data))
+		return NULL;
 
 	func = loadNativeLibrarySym(name);
 	if (func == NULL) {
 		/* Try the long signatures */
+		if (strlen(name) + 2 >= sizeof(name))
+			return NULL;
 		strcat(name, "__");
-		strcatJNI(name, METHOD_SIGD(meth));
+		if (!strcatJNI(name, sizeof(name), METHOD_SIGD(meth)))
+			return NULL;
 		func = loadNativeLibrarySym(name);
 	}
 

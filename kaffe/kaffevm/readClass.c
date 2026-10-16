@@ -125,7 +125,7 @@ readInterfaces(classFile* fp, Hjava_lang_Class* this, errorInfo *einfo)
 		return true;
 	}			
 
-	if (! checkBufSize(fp, (u2)(interfaces_count * 2), CLASS_CNAME(this), einfo))
+	if (! checkBufSize(fp, (u4)interfaces_count * 2, CLASS_CNAME(this), einfo))
 		return false;
 
 	interfaces = (Hjava_lang_Class**)
@@ -283,7 +283,8 @@ readAttributes(classFile* fp, Hjava_lang_Class* this,
 		if (! checkBufSize(fp, len, CLASS_CNAME(this), einfo))
 			return false;
 
-		if (CLASS_CONST_TAG(this, idx) == CONSTANT_Utf8) {
+		if (idx < CLASS_CONST_SIZE(this) &&
+		    CLASS_CONST_TAG(this, idx) == CONSTANT_Utf8) {
 			Utf8Const* name;
 			name = WORD2UTF(CLASS_CONST_DATA (this, idx));
 			DBG(READCLASS,
@@ -329,7 +330,16 @@ readAttributes(classFile* fp, Hjava_lang_Class* this,
 			}
 			else if (utf8ConstEqual(name, ConstantValue_name)
 				 && (thingType == READATTR_FIELD)) {
+				if (len < 2)
+					goto truncated;
 				readu2(&idx, fp);
+				if (idx == 0 || idx >= CLASS_CONST_SIZE(this)) {
+					postExceptionMessage(einfo,
+						JAVA_LANG(ClassFormatError),
+						"%s (Invalid constant value index: %d)",
+						CLASS_CNAME(this), idx);
+					return false;
+				}
 				setFieldValue(this, (Field*)thing, idx);
 			}
 			else if (utf8ConstEqual(name, Exceptions_name)
@@ -341,6 +351,8 @@ readAttributes(classFile* fp, Hjava_lang_Class* this,
 			}
 			else if (utf8ConstEqual(name, SourceFile_name)
 				&& (thingType == READATTR_CLASS)) {
+				if (len < 2)
+					goto truncated;
 				readu2(&idx, fp);
 				if (! addSourceFile((Hjava_lang_Class*)thing, idx, einfo)) {
 					return false;
@@ -374,6 +386,8 @@ readAttributes(classFile* fp, Hjava_lang_Class* this,
 			}
 			else if (utf8ConstEqual(name, Signature_name)) {
 			  Utf8Const *signature;
+			  if (len < 2)
+			    goto truncated;
 			  readu2(&idx, fp);
 			  if (!readSignatureAttribute(this, idx, &signature, einfo))
 			    return false;
@@ -415,6 +429,11 @@ readAttributes(classFile* fp, Hjava_lang_Class* this,
 		}
 	}
 	return true;
+
+truncated:
+	postExceptionMessage(einfo, JAVA_LANG(ClassFormatError),
+			     "%s (truncated attribute)", CLASS_CNAME(this));
+	return false;
 }
 
 /*

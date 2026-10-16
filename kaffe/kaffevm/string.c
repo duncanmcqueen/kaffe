@@ -36,7 +36,8 @@ char*
 stringJava2C(const Hjava_lang_String* js)
 {
 	char* str;
-	const size_t size = (size_t)(STRING_SIZE(js) + 1);
+	/* Each Java character takes at most 3 bytes in UTF-8. */
+	const size_t size = (size_t)STRING_SIZE(js) * 3 + 1;
 
 	str = gc_malloc(size, KGC_ALLOC_FIXED);
 	if (str != 0) {
@@ -46,13 +47,15 @@ stringJava2C(const Hjava_lang_String* js)
 }
 
 /*
- * Convert an Java string to a C string in the buffer.
- * We simply truncate the Java characters to 8 bits.
+ * Convert a Java string to a UTF-8 C string in the buffer.  The buffer
+ * has len bytes.  If the string does not fit, it is cut at a character
+ * boundary.
  */
 char*
 stringJava2CBuf(const Hjava_lang_String* js, char* cs, int len)
 {
 	jchar* chrs;
+	int n;
 
 	if (len <= 0) {
 		return(NULL);
@@ -62,23 +65,30 @@ stringJava2CBuf(const Hjava_lang_String* js, char* cs, int len)
 		return(cs);
 	}
 	chrs = STRING_DATA(js);
-	len--;
-	if (len > STRING_SIZE(js)) {
-		len = STRING_SIZE(js);
-	}
+	n = STRING_SIZE(js);
+	len--;			/* room for the NUL */
 
-	while (--len >= 0) {
+	for (; n > 0; n--, chrs++) {
 	  if (*chrs >= 0x0001 && *chrs <= 0x007F) {
-	    *cs++ = *chrs++ & 0x7F;
+	    if (len < 1)
+	      break;
+	    *cs++ = *chrs & 0x7F;
+	    len -= 1;
 	  }
 	  else if (*chrs >= 0x0080 && *chrs <= 0x07FF) {
+	    if (len < 2)
+	      break;
 	    *cs++ = 0xC0 | ((*chrs >> 6) & 0x1F);
-	    *cs++ = 0x80 | (*chrs++ & 0x3F);
+	    *cs++ = 0x80 | (*chrs & 0x3F);
+	    len -= 2;
 	  }
 	  else {
+	    if (len < 3)
+	      break;
 	    *cs++ = 0xE0 | ((*chrs >> 12) & 0x0F);
 	    *cs++ = 0x80 | ((*chrs >> 6) & 0x3F);
-	    *cs++ = 0x80 | (*chrs++ & 0x3F);
+	    *cs++ = 0x80 | (*chrs & 0x3F);
+	    len -= 3;
 	  }
 	}
 	

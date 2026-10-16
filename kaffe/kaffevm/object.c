@@ -17,6 +17,7 @@
 #include "config.h"
 
 #include <assert.h>
+#include <limits.h>
 
 #include "debug.h"
 #include "config-std.h"
@@ -228,9 +229,20 @@ newMultiArrayChecked(Hjava_lang_Class* clazz, int* dims, errorInfo *einfo)
   Hjava_lang_Object** array;
   int i, j, k, ndims, fullsize;
   int stacksize, stackptr;
+  jlong total;
 
-  for (i=0,fullsize=1;dims[i+1] >= 0; i++)
-    fullsize += fullsize*dims[i];
+  /* Count the arrays to make.  Stop before the count can overflow:
+   * so many arrays cannot be allocated anyway. */
+  for (i=0,total=1;dims[i+1] >= 0; i++)
+    {
+      total += total*dims[i];
+      if (total > (jlong)(INT_MAX / sizeof(Hjava_lang_Object *)))
+	{
+	  postOutOfMemory(einfo);
+	  return NULL;
+	}
+    }
+  fullsize = (int)total;
   ndims = i+1;
 
   stack = (Hjava_lang_Object **)
